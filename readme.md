@@ -127,3 +127,6 @@ pip install -r requirements.txt
 Run the app:
 
 flask run
+
+NOTE : I DID NOT INCLUDE FIREBASE KEY YOU HAVE TO MAKE YOUR OWN 
+
