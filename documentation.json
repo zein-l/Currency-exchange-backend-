@@ -1,0 +1,275 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+      "title": "Currency Exchange & Wallet API",
+      "description": "Backend API for Currency Exchange Platform with P2P Wallet, Forecasts, Triggers, and Firebase Authentication.",
+      "version": "1.0.0"
+    },
+    "servers": [
+      {
+        "url": "http://localhost:5000",
+        "description": "Local development server"
+      }
+    ],
+    "components": {
+      "securitySchemes": {
+        "bearerAuth": {
+          "type": "http",
+          "scheme": "bearer",
+          "bearerFormat": "JWT"
+        }
+      }
+    },
+    "paths": {
+      "/exchangeRate": {
+        "get": {
+          "summary": "Get average exchange rate (USD to LBP)",
+          "responses": {
+            "200": {
+              "description": "Returns computed average rate from user transactions"
+            }
+          }
+        }
+      },
+      "/api/live-rates": {
+        "get": {
+          "summary": "Fetch real-time exchange rates from external API",
+          "responses": {
+            "200": {
+              "description": "JSON object with real-time currency rates"
+            }
+          }
+        }
+      },
+      "/api/gold-price": {
+        "get": {
+          "summary": "Get current gold price",
+          "responses": {
+            "200": {
+              "description": "JSON object with latest gold price"
+            }
+          }
+        }
+      },
+      "/api/dashboard-rates": {
+        "get": {
+          "summary": "Get combined currency and gold rates",
+          "responses": {
+            "200": {
+              "description": "JSON object with both sets of data"
+            }
+          }
+        }
+      },
+      "/historical-df": {
+        "get": {
+          "summary": "Get historical exchange rates as DataFrame-style JSON",
+          "parameters": [
+            {"name": "source", "in": "query", "schema": {"type": "string"}, "default": "USD"},
+            {"name": "currency", "in": "query", "schema": {"type": "string"}, "default": "EUR"},
+            {"name": "days", "in": "query", "schema": {"type": "integer"}, "default": 7}
+          ],
+          "responses": {
+            "200": {"description": "JSON array of historical rates"}
+          }
+        }
+      },
+      "/predict-df": {
+        "get": {
+          "summary": "Forecast future exchange rates",
+          "parameters": [
+            {"name": "source", "in": "query", "schema": {"type": "string"}},
+            {"name": "currency", "in": "query", "schema": {"type": "string"}},
+            {"name": "history_days", "in": "query", "schema": {"type": "integer"}},
+            {"name": "forecast_days", "in": "query", "schema": {"type": "integer"}}
+          ],
+          "responses": {
+            "200": {"description": "Forecasted data with suggestion"}
+          }
+        }
+      },
+      "/predict-plot": {
+        "get": {
+          "summary": "Return forecast chart image (PNG)",
+          "parameters": [
+            {"name": "source", "in": "query", "schema": {"type": "string"}},
+            {"name": "currency", "in": "query", "schema": {"type": "string"}},
+            {"name": "history_days", "in": "query", "schema": {"type": "integer"}},
+            {"name": "forecast_days", "in": "query", "schema": {"type": "integer"}}
+          ],
+          "responses": {
+            "200": {
+              "description": "PNG image of forecast chart",
+              "content": {
+                "image/png": {
+                  "schema": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/api/wallet": {
+        "get": {
+          "summary": "Get current user's wallet",
+          "security": [{"bearerAuth": []}],
+          "responses": {
+            "200": {"description": "User balance"}
+          }
+        }
+      },
+      "/api/wallet/deposit": {
+        "post": {
+          "summary": "Deposit funds into wallet",
+          "security": [{"bearerAuth": []}],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "currency": {"type": "string"},
+                    "amount": {"type": "number"}
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "201": {"description": "Deposit success"}
+          }
+        }
+      },
+      "/api/orders": {
+        "post": {
+          "summary": "Create a new order",
+          "security": [{"bearerAuth": []}],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {"type": "string"},
+                    "base": {"type": "string"},
+                    "target": {"type": "string"},
+                    "amount": {"type": "number"},
+                    "price": {"type": "number"}
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "201": {"description": "Order created"}
+          }
+        }
+      },
+      "/api/orders/{id}/accept": {
+        "post": {
+          "summary": "Accept an existing order",
+          "security": [{"bearerAuth": []}],
+          "parameters": [
+            {"name": "id", "in": "path", "required": true, "schema": {"type": "string"}}
+          ],
+          "responses": {
+            "200": {"description": "Order accepted and funds escrowed"}
+          }
+        }
+      },
+      "/api/escrow/{id}/release": {
+        "post": {
+          "summary": "Release funds from escrow",
+          "security": [{"bearerAuth": []}],
+          "parameters": [
+            {"name": "id", "in": "path", "required": true, "schema": {"type": "string"}}
+          ],
+          "responses": {
+            "200": {"description": "Funds released to buyer"}
+          }
+        }
+      },
+      "/api/rating": {
+        "post": {
+          "summary": "Submit a rating for a user",
+          "security": [{"bearerAuth": []}],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "to_user": {"type": "string"},
+                    "score": {"type": "integer"}
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "201": {"description": "Rating submitted"}
+          }
+        }
+      },
+      "/check-triggers": {
+        "post": {
+          "summary": "Create a new currency threshold trigger",
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "base_currency": {"type": "string"},
+                    "target_currency": {"type": "string"},
+                    "operator": {"type": "string"},
+                    "threshold": {"type": "number"}
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "201": {"description": "Trigger added"}
+          }
+        }
+      },
+      "/check-live-triggers": {
+        "post": {
+          "summary": "Check all triggers to see if any condition is met",
+          "responses": {
+            "200": {"description": "Trigger match results"}
+          }
+        }
+      },
+      "/recognize-currency": {
+        "post": {
+          "summary": "Predict currency type from an uploaded image",
+          "requestBody": {
+            "required": true,
+            "content": {
+              "multipart/form-data": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "image": {"type": "string", "format": "binary"}
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {"description": "Predicted"}
+          }
+        }
+      }
+    }
+  }
+  
